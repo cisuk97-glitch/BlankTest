@@ -1,0 +1,891 @@
+/* ========================================================
+   아이패드 백지테스트 스타일시트 (style.css)
+   - 스마트 스터디 플래너 (SubjectPlan) 소프트 뉴모피즘 디자인 시스템
+   - 베이스: #F0F4F8
+   - 하이라이트: #ffffff / 음영: #d1d9e6, #cad5e3
+   - 텍스트: #2D3748, #718096
+   - 포인트 컬러: 피치 오렌지(#FF9F43), 스퀴시 블루(#54A0FF), 에메랄드(#10B981)
+   - 타이포그래피: Pretendard, JetBrains Mono
+   - iPadOS Safari 터치 & 회전 최적화
+   ======================================================== */
+
+:root {
+  --bg: #F0F4F8;
+  --card-bg: #F0F4F8;
+  --paper-bg: #ffffff;
+  --viewport-bg: #E2E8F0;
+
+  --shadow-light: #ffffff;
+  --shadow-dark: #d1d9e6;
+  --shadow-darker: #cad5e3;
+
+  --text-main: #2D3748;
+  --text-muted: #718096;
+  --text-light: #A0AEC0;
+
+  --peach: #FF9F43;
+  --peach-hover: #f28b2a;
+  --blue: #54A0FF;
+  --blue-hover: #388bf2;
+  --emerald: #10B981;
+  --emerald-hover: #059669;
+  --rose: #F43F5E;
+  --amber: #F59E0B;
+
+  --toolbar-bg: rgba(240, 244, 248, 0.94);
+  --toolbar-border: rgba(255, 255, 255, 0.85);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 뷰 전환 */
+.view {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.view.active {
+  display: flex;
+}
+
+/* ========================================================
+   1. 시작 화면 (Setup View - 뉴모피즘 카드)
+   ======================================================== */
+#setup-view {
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 15%, #ffffff 0%, #F0F4F8 75%);
+  padding: 1.5rem;
+}
+
+.setup-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card-bg);
+  box-shadow: 12px 12px 28px var(--shadow-darker), -12px -12px 28px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 28px;
+  padding: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+.logo-badge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(255, 159, 67, 0.15);
+  color: #ea580c;
+  border: 1px solid rgba(255, 159, 67, 0.35);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.setup-header h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.setup-header p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* 뉴모피즘 음각 인풋/셀렉트 (Sunken Input) */
+.custom-select, .custom-input {
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  border-radius: 16px;
+  background: #F0F4F8;
+  box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-select:focus, .custom-input:focus {
+  border-color: var(--blue);
+  box-shadow: inset 3px 3px 6px #c7d2e2, inset -3px -3px 6px #ffffff, 0 0 0 3px rgba(84, 160, 255, 0.22);
+}
+
+.custom-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 공통 버튼 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.5rem;
+  border-radius: 18px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 피치 오렌지 3D 버튼 (SubjectPlan Primary) */
+.btn-primary {
+  background: linear-gradient(145deg, #ffa851, #f28b2a);
+  color: #ffffff;
+  box-shadow: 5px 5px 14px rgba(242, 139, 42, 0.38), -4px -4px 10px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 7px 7px 18px rgba(242, 139, 42, 0.48), -5px -5px 12px var(--shadow-light);
+}
+.btn-primary:active:not(:disabled) {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.35);
+}
+
+/* 뉴모피즘 세컨더리 버튼 */
+.btn-secondary {
+  background: #F0F4F8;
+  color: var(--text-muted);
+  box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  color: var(--text-main);
+  box-shadow: 6px 6px 14px var(--shadow-darker), -6px -6px 14px var(--shadow-light);
+}
+
+/* 에메랄드 그린 완료 버튼 */
+.btn-success {
+  background: linear-gradient(145deg, #2ecc71, #10b981);
+  color: #ffffff;
+  box-shadow: 4px 4px 12px rgba(16, 185, 129, 0.38), -3px -3px 8px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 16px rgba(16, 185, 129, 0.48), -4px -4px 10px var(--shadow-light);
+}
+
+.btn-text {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+.btn-text:hover {
+  color: var(--text-main);
+}
+
+.setup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(209, 217, 230, 0.6);
+}
+
+/* 상태 배지 */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.badge.offline {
+  background: rgba(244, 63, 94, 0.15);
+  color: #e11d48;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+/* ========================================================
+   2. 캔버스 뷰 (Canvas View & 3D 뉴모피즘 툴바)
+   ======================================================== */
+#canvas-view {
+  flex-direction: column;
+  position: relative;
+  background: var(--viewport-bg);
+  overflow: hidden;
+}
+
+/* 상단 3D 글래스/뉴모피즘 플로팅 툴바 */
+.floating-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--toolbar-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 16px;
+  box-shadow: 6px 6px 18px var(--shadow-darker), -6px -6px 18px var(--shadow-light);
+  gap: 6px;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.floating-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* 뉴모피즘 도구 버튼 */
+.tool-btn {
+  height: 35px;
+  padding: 0 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: #F0F4F8;
+  color: var(--text-main);
+  box-shadow: 2px 2px 6px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tool-btn span {
+  font-size: 0.78rem;
+}
+
+.tool-btn.icon-btn {
+  width: 35px;
+  min-width: 35px;
+  padding: 0;
+}
+
+.tool-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* 툴바 내 액션 버튼 (완료 버튼 등) */
+.floating-toolbar .btn {
+  height: 35px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+  gap: 0.35rem;
+}
+.floating-toolbar .btn span {
+  font-size: 0.78rem;
+}
+
+.tool-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 10px var(--shadow-darker), -4px -4px 10px var(--shadow-light);
+  color: #1a202c;
+}
+
+.tool-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+}
+
+/* 선택된 활성 툴 (Sunken Pressed State + Peach Accent) */
+.tool-btn.active {
+  background: #eaf0f7;
+  color: #f28b2a;
+  border-color: rgba(242, 139, 42, 0.45);
+  box-shadow: inset 3px 3px 6px var(--shadow-darker), inset -3px -3px 6px var(--shadow-light);
+}
+
+.tool-btn.text-warning {
+  color: #d97706;
+}
+
+/* 메타 정보 (과목/단원 배지) */
+.test-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+.badge-subject {
+  background: linear-gradient(145deg, #5eb0ff, #388bf2);
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  box-shadow: 2px 2px 6px rgba(56, 139, 242, 0.3), -2px -2px 6px var(--shadow-light);
+  flex-shrink: 0;
+}
+.lesson-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 뉴모피즘 타이머 박스 (음각 필) */
+.timer-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #F0F4F8;
+  padding: 4px 10px;
+  border-radius: 24px;
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  flex-shrink: 0;
+}
+
+.timer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.timer-box.running .timer-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.timer-box.paused .timer-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+.timer-status-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: 'Pretendard', sans-serif;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.25); }
+}
+
+/* 뉴모피즘 색상 팔레트 컨테이너 */
+.color-palette {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: #F0F4F8;
+  border-radius: 14px;
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.color-dot.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #F0F4F8, 0 0 0 4px #f97316;
+}
+
+.color-picker-input {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+}
+
+/* 뉴모피즘 선 굵기 컨트롤 */
+.stroke-width-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: #F0F4F8;
+  padding: 3px 6px;
+  border-radius: 14px;
+  box-shadow: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.stroke-width-wrap input[type=range] {
+  width: 48px;
+  accent-color: #f28b2a;
+  cursor: pointer;
+}
+
+#stroke-width-val {
+  min-width: 24px;
+  font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-main);
+}
+
+/* ========================================================
+   캔버스 뷰포트 & A4 용지
+   ======================================================== */
+.canvas-viewport {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background: #e5edf5;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* A4 용지 래퍼 (클린 화이트 & 부드러운 현실감 그림자) */
+.paper-wrapper {
+  position: absolute;
+  width: 1754px;
+  height: 2480px;
+  background: var(--paper-bg);
+  box-shadow: 0 20px 45px rgba(45, 55, 72, 0.15), 0 4px 14px rgba(45, 55, 72, 0.08);
+  border-radius: 6px;
+  transform-origin: 0 0;
+  touch-action: none;
+}
+
+#paint-canvas, #overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1754px;
+  height: 2480px;
+  touch-action: none;
+}
+
+#overlay-canvas {
+  pointer-events: none;
+}
+
+/* 줌 배지 (뉴모피즘 플로팅 태그) */
+.zoom-badge {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  z-index: 100;
+  background: #F0F4F8;
+  box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-main);
+  pointer-events: none;
+}
+
+/* 올가미 액션 플로팅 바 (뉴모피즘 팝업) */
+.lasso-actions {
+  position: absolute;
+  z-index: 150;
+  display: flex;
+  gap: 8px;
+  background: #F0F4F8;
+  padding: 7px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 6px 6px 16px var(--shadow-darker), -6px -6px 16px var(--shadow-light);
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+}
+.lasso-actions.hidden {
+  display: none;
+}
+.lasso-btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #F0F4F8;
+  color: var(--text-main);
+  box-shadow: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lasso-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 4px var(--shadow-dark);
+}
+.lasso-btn.danger {
+  background: linear-gradient(145deg, #ff6b81, #f43f5e);
+  color: #fff;
+  border: none;
+  box-shadow: 3px 3px 8px rgba(244, 63, 94, 0.35), -2px -2px 6px var(--shadow-light);
+}
+
+/* ========================================================
+   3. 모달 (뉴모피즘 3D 다이얼로그)
+   ======================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(45, 55, 72, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 450px;
+  background: #F0F4F8;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  padding: 2.2rem;
+  box-shadow: 14px 14px 30px var(--shadow-darker), -14px -14px 30px var(--shadow-light);
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  color: var(--text-main);
+}
+
+.modal-header h2 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+.modal-header p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-top: 4px;
+}
+
+/* 결과 요약 그리드 */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  background: #F0F4F8;
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.summary-item .label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.summary-item .value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #3b82f6;
+  margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.save-notice {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #9a3412;
+  background: rgba(255, 159, 67, 0.12);
+  border-left: 3px solid #f97316;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 0.5rem;
+}
+
+/* ========================================================
+   4. 토스트 알림 (뉴모피즘 플로팅 토스트)
+   ======================================================== */
+.toast-container {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #F0F4F8;
+  border: 1px solid rgba(255, 159, 67, 0.4);
+  color: var(--text-main);
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  box-shadow: 8px 8px 24px var(--shadow-darker), -8px -8px 24px var(--shadow-light);
+  z-index: 9999;
+  opacity: 0;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+  pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.toast-container.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ========================================================
+   5. 가로/세로 모드 반응형 UI 최적화
+   ======================================================== */
+
+/* 가로 모드 (Landscape) */
+@media (orientation: landscape) {
+  .floating-toolbar {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    flex-wrap: nowrap !important;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+}
+
+/* 세로 모드 (Portrait) */
+@media (orientation: portrait) {
+  .floating-toolbar {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    flex-wrap: nowrap !important;
+    padding: 5px 8px;
+    gap: 4px;
+    border-radius: 14px;
+  }
+
+  .tool-btn {
+    height: 33px;
+    padding: 0 6px;
+    font-size: 0.74rem;
+  }
+
+  .tool-btn span {
+    font-size: 0.74rem;
+  }
+
+  .tool-btn.icon-btn {
+    width: 33px;
+    min-width: 33px;
+    padding: 0;
+  }
+
+  .tool-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .floating-toolbar .btn {
+    height: 33px;
+    padding: 0 8px;
+    font-size: 0.74rem;
+  }
+  .floating-toolbar .btn span {
+    font-size: 0.74rem;
+  }
+
+  .toolbar-group {
+    gap: 3px;
+  }
+
+  .timer-box {
+    padding: 3px 8px;
+    font-size: 0.88rem;
+    gap: 4px;
+  }
+
+  .test-meta {
+    max-width: 110px;
+  }
+
+  .lesson-title {
+    font-size: 0.75rem;
+  }
+
+  .color-palette {
+    gap: 3px;
+    padding: 2px 4px;
+  }
+
+  .color-dot {
+    width: 18px;
+    height: 18px;
+  }
+
+  .color-picker-input {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stroke-width-wrap {
+    padding: 2px 4px;
+    gap: 3px;
+  }
+
+  .stroke-width-wrap input[type=range] {
+    width: 36px;
+  }
+
+  #stroke-width-val {
+    font-size: 0.68rem;
+    min-width: 20px;
+  }
+}
+
+/* 좁은 화면 / 분할 뷰(Split View) 대응 */
+@media (max-width: 820px) {
+  .floating-toolbar {
+    flex-wrap: nowrap !important;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .test-meta {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .test-meta {
+    display: none;
+  }
+}

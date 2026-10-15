@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa851"/>
+      <stop offset="100%" stop-color="#f28b2a"/>
+    </linearGradient>
+    <linearGradient id="pageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Background (SubjectPlan Peach Orange) -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+
+  <!-- Note Book Body with Shadow -->
+  <g filter="url(#shadow)">
+    <!-- Main Paper Page -->
+    <rect x="96" y="80" width="320" height="352" rx="20" fill="url(#pageGrad)"/>
+    <!-- Left Spine accent -->
+    <path d="M96 100 A 20 20 0 0 1 116 80 L 144 80 L 144 432 L 116 432 A 20 20 0 0 1 96 412 Z" fill="#f97316" opacity="0.9"/>
+    <!-- Spiral binder rings / holes -->
+    <circle cx="144" cy="120" r="10" fill="#cbd5e1"/>
+    <circle cx="144" cy="180" r="10" fill="#cbd5e1"/>
+    <circle cx="144" cy="240" r="10" fill="#cbd5e1"/>
+    <circle cx="144" cy="300" r="10" fill="#cbd5e1"/>
+    <circle cx="144" cy="360" r="10" fill="#cbd5e1"/>
+    <line x1="126" y1="120" x2="144" y2="120" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="126" y1="180" x2="144" y2="180" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="126" y1="240" x2="144" y2="240" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="126" y1="300" x2="144" y2="300" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <line x1="126" y1="360" x2="144" y2="360" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Note lines -->
+    <line x1="180" y1="150" x2="370" y2="150" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
+    <line x1="180" y1="200" x2="370" y2="200" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
+    <line x1="180" y1="250" x2="340" y2="250" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
+    <line x1="180" y1="300" x2="310" y2="300" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Pen Icon overlay (bottom right) -->
+  <g transform="translate(290, 270) rotate(-45)">
+    <rect x="-14" y="-70" width="28" height="90" rx="6" fill="#3b82f6"/>
+    <path d="M-14 20 L0 52 L14 20 Z" fill="#60a5fa"/>
+    <circle cx="0" cy="50" r="3" fill="#1e293b"/>
+    <rect x="-14" y="-85" width="28" height="15" rx="3" fill="#e2e8f0"/>
+  </g>
+</svg>
