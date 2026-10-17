@@ -76,17 +76,12 @@
         </div>
       </div>
 
-      <!-- 중앙: 타이머 & 상태 -->
-      <div class="toolbar-group center">
-        <div class="timer-box" id="timer-box">
-          <span class="timer-dot" id="timer-dot"></span>
-          <span id="timer-display">00:00</span>
-          <span id="timer-status" class="timer-status-text">대기 중</span>
-        </div>
-      </div>
-
       <!-- 도구 팔레트 -->
       <div class="toolbar-group tools">
+        <!-- 마스코트 아이콘 (연필 버튼 앞) -->
+        <div class="toolbar-mascot-wrap" title="백지테스트 마스코트">
+          <img src="icon-192.png" alt="마스코트" class="toolbar-mascot-icon">
+        </div>
         <!-- 펜 -->
         <button id="tool-pen" class="tool-btn active" title="펜">
           <svg viewBox="0 0 24 24">
@@ -139,7 +134,7 @@
         </div>
       </div>
 
-      <!-- 우측: 액션 버튼들 -->
+      <!-- 우측: 액션 버튼들 및 스톱워치 -->
       <div class="toolbar-group right">
         <button id="btn-undo" class="tool-btn icon-btn" title="실행 취소">
           <svg viewBox="0 0 24 24">
@@ -153,13 +148,14 @@
               d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" />
           </svg>
         </button>
+        <!-- 시간측정 (화면맞춤 앞으로 이동) -->
+        <div class="timer-box" id="timer-box">
+          <span class="timer-dot" id="timer-dot"></span>
+          <span id="timer-display">00:00</span>
+          <span id="timer-status" class="timer-status-text">대기 중</span>
+        </div>
         <button id="btn-fit" class="tool-btn" title="화면 맞춤">
           <span>화면맞춤</span>
-        </button>
-        <button id="btn-download" class="tool-btn icon-btn" title="이미지 바로 저장 (갤러리/다운로드)">
-          <svg viewBox="0 0 24 24">
-            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-          </svg>
         </button>
         <button id="btn-restart" class="tool-btn text-warning" title="처음부터 다시 쓰기 (누적시간 유지)">
           <span>다시시작</span>

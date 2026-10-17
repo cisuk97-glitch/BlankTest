@@ -364,8 +364,8 @@
     dom.setupView.classList.remove('active');
     dom.canvasView.classList.add('active');
 
-    // 화면 진입 시 최적 화면 맞춤 줌 계산
-    fitToScreen();
+    // 화면 진입 시 가로 사이즈 기준 화면 맞춤
+    fitToWidth();
     resetSession(false); // 타이머는 0으로 시작 준비
   });
 
@@ -389,26 +389,37 @@
     updateLassoActionBarPos();
   }
 
-  function fitToScreen() {
-    const vpW = dom.viewport.clientWidth;
-    const vpH = dom.viewport.clientHeight;
-    const paperW = dom.paintCanvas.width;
-    const paperH = dom.paintCanvas.height;
+  // 가로 사이즈(폭) 기준으로 캔버스 크기 및 위치 맞춤
+  function fitToWidth() {
+    if (!dom.canvasView.classList.contains('active')) return;
 
-    // 상단 툴바 여백 고려 (상하 80px 여백)
-    const padding = 60;
-    const scaleX = (vpW - padding) / paperW;
-    const scaleY = (vpH - padding - 60) / paperH;
-    let s = Math.min(scaleX, scaleY);
+    const vpW = dom.viewport.clientWidth;
+    if (!vpW) return;
+    const paperW = dom.paintCanvas.width;
+
+    // 좌우 여백 (패딩 32px)
+    const padding = 32;
+    let s = (vpW - padding) / paperW;
     s = Math.max(state.minScale, Math.min(state.maxScale, s));
 
     state.scale = s;
     state.panX = (vpW - paperW * s) / 2;
-    state.panY = (vpH - paperH * s) / 2 + 30;
+    state.panY = 75; // 상단 플로팅 툴바 아래 여백 배치
     updateViewportTransform();
   }
 
-  dom.fitBtn.addEventListener('click', fitToScreen);
+  dom.fitBtn.addEventListener('click', fitToWidth);
+
+  // 화면 회전 및 리사이즈 감지 시 가로 사이즈 기준 자동 맞춤
+  let resizeTimer = null;
+  function handleScreenChange() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      fitToWidth();
+    }, 100);
+  }
+  window.addEventListener('resize', handleScreenChange);
+  window.addEventListener('orientationchange', handleScreenChange);
 
   // 뷰포트 화면 좌표 -> 캔버스 내부 논리 좌표 변환
   function clientToCanvas(clientX, clientY) {

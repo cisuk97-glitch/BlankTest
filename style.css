@@ -395,21 +395,25 @@ html, body {
   color: #d97706;
 }
 
-/* 메타 정보 (과목/단원 배지) */
+/* 좌측 그룹 및 메타 정보 (과목/단원명 최대한 노출) */
+.toolbar-group.left {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 460px;
+}
+
 .test-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
-  max-width: 140px;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 1;
 }
 .badge-subject {
   background: linear-gradient(145deg, #5eb0ff, #388bf2);
   color: #fff;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   font-size: 0.75rem;
   border-radius: 9999px;
   font-weight: 700;
@@ -417,11 +421,38 @@ html, body {
   flex-shrink: 0;
 }
 .lesson-title {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 툴바 마스코트 아이콘 (연필 버튼 앞 최대한 크게 노출) */
+.toolbar-mascot-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.toolbar-mascot-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toolbar-mascot-icon:hover {
+  transform: scale(1.15) rotate(4deg);
 }
 
 /* 뉴모피즘 타이머 박스 (음각 필) */
@@ -439,6 +470,7 @@ html, body {
   font-weight: 700;
   color: var(--text-main);
   flex-shrink: 0;
+  margin-right: 2px;
 }
 
 .timer-dot {
@@ -833,12 +865,21 @@ html, body {
     gap: 4px;
   }
 
+  .toolbar-mascot-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .toolbar-group.left {
+    max-width: 260px;
+  }
+
   .test-meta {
-    max-width: 110px;
+    max-width: 220px;
   }
 
   .lesson-title {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
   }
 
   .color-palette {
@@ -880,12 +921,12 @@ html, body {
   }
 
   .test-meta {
-    max-width: 100px;
+    max-width: 240px;
   }
 }
 
 @media (max-width: 480px) {
   .test-meta {
-    display: none;
+    max-width: 130px;
   }
 }
