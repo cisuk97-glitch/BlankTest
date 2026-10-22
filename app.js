@@ -19,10 +19,11 @@
     lessonId: null,
     lessonName: '',
 
-    // 도구: 'pen' | 'highlighter' | 'eraser' | 'lasso'
+    // 도구: 'pen' | 'pencil' | 'highlighter' | 'eraser' | 'lasso'
     tool: 'pen',
     color: '#2D3748',
     strokeWidth: 3,
+    showGrid: localStorage.getItem('blanktest_show_grid') === 'true',
 
     // 스트로크 & 히스토리
     strokes: [],       // Array of Stroke objects
@@ -91,11 +92,13 @@
 
     // 도구 버튼
     toolPen: document.getElementById('tool-pen'),
+    toolPencil: document.getElementById('tool-pencil'),
     toolHighlighter: document.getElementById('tool-highlighter'),
     toolEraser: document.getElementById('tool-eraser'),
     toolLasso: document.getElementById('tool-lasso'),
     undoBtn: document.getElementById('btn-undo'),
     redoBtn: document.getElementById('btn-redo'),
+    gridBtn: document.getElementById('btn-grid'),
     fitBtn: document.getElementById('btn-fit'),
     restartBtn: document.getElementById('btn-restart'),
     finishBtn: document.getElementById('btn-finish'),
@@ -522,7 +525,7 @@
     state.redoStack = []; // 새 작업 시 redo 초기화
   }
 
-  dom.undoBtn.addEventListener('click', () => {
+  function triggerUndo() {
     if (state.undoStack.length === 0) return;
     state.redoStack.push(JSON.parse(JSON.stringify(state.strokes)));
     state.strokes = state.undoStack.pop();
@@ -532,7 +535,10 @@
     redrawAll();
     clearOverlay();
     registerUserActivity();
-  });
+    showToast('실행 취소 (Undo)', 1200);
+  }
+
+  dom.undoBtn.addEventListener('click', triggerUndo);
 
   dom.redoBtn.addEventListener('click', () => {
     if (state.redoStack.length === 0) return;
@@ -576,6 +582,10 @@
       ctx.globalAlpha = 0.35;
       ctx.strokeStyle = stroke.color;
       ctx.lineWidth = stroke.width * 3.5;
+    } else if (stroke.type === 'pencil') {
+      ctx.globalAlpha = 0.65;
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = Math.max(1, stroke.width * 0.9);
     } else {
       ctx.globalAlpha = 1.0;
       ctx.strokeStyle = stroke.color;
@@ -585,7 +595,8 @@
     ctx.beginPath();
     const pts = stroke.points;
     if (pts.length === 1) {
-      ctx.arc(pts[0].x, pts[0].y, stroke.width / 2, 0, Math.PI * 2);
+      const radius = (stroke.type === 'pencil') ? Math.max(0.6, (stroke.width * 0.9) / 2) : stroke.width / 2;
+      ctx.arc(pts[0].x, pts[0].y, radius, 0, Math.PI * 2);
       ctx.fillStyle = stroke.color;
       ctx.fill();
     } else {
@@ -761,6 +772,8 @@
   dom.viewport.addEventListener('pointerup', onPointerUp);
   dom.viewport.addEventListener('pointercancel', onPointerUp);
 
+  let twoFingerTapInfo = null;
+
   function onPointerDown(e) {
     e.preventDefault();
     dom.viewport.setPointerCapture(e.pointerId);
@@ -768,7 +781,7 @@
 
     registerUserActivity();
 
-    // 두 손가락 이상: 줌 & 팬 모드 진입
+    // 두 손가락 이상: 줌 & 팬 모드 진입 및 2손가락 탭 감지 시작
     if (state.pointers.size === 2) {
       if (currentStroke) {
         currentStroke = null;
@@ -784,6 +797,14 @@
       state.initialMidpoint = {
         x: (pts[0].x + pts[1].x) / 2,
         y: (pts[0].y + pts[1].y) / 2
+      };
+
+      twoFingerTapInfo = {
+        startTime: Date.now(),
+        startPts: pts.map(p => ({ x: p.x, y: p.y })),
+        startPan: { x: state.panX, y: state.panY },
+        startScale: state.scale,
+        moved: false
       };
       return;
     }
@@ -809,7 +830,7 @@
         }
       }
 
-      if (state.tool === 'pen' || state.tool === 'highlighter') {
+      if (state.tool === 'pen' || state.tool === 'pencil' || state.tool === 'highlighter') {
         currentStroke = {
           id: 's_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
           type: state.tool,
@@ -841,6 +862,16 @@
         x: (pts[0].x + pts[1].x) / 2,
         y: (pts[0].y + pts[1].y) / 2
       };
+
+      if (twoFingerTapInfo && !twoFingerTapInfo.moved) {
+        for (let i = 0; i < pts.length; i++) {
+          const s = twoFingerTapInfo.startPts[i];
+          if (s && Math.hypot(pts[i].x - s.x, pts[i].y - s.y) > 12) {
+            twoFingerTapInfo.moved = true;
+            break;
+          }
+        }
+      }
 
       if (state.initialPinchDist > 0) {
         const factor = currentDist / state.initialPinchDist;
@@ -893,7 +924,7 @@
         return;
       }
 
-      // 펜 / 형광펜 그리기
+      // 펜 / 연필 / 형광펜 그리기
       if (currentStroke) {
         currentStroke.points.push(pt);
         // bbox 갱신
@@ -913,6 +944,10 @@
             pCtx.globalAlpha = 0.35;
             pCtx.strokeStyle = currentStroke.color;
             pCtx.lineWidth = currentStroke.width * 3.5;
+          } else if (currentStroke.type === 'pencil') {
+            pCtx.globalAlpha = 0.65;
+            pCtx.strokeStyle = currentStroke.color;
+            pCtx.lineWidth = Math.max(1, currentStroke.width * 0.9);
           } else {
             pCtx.globalAlpha = 1.0;
             pCtx.strokeStyle = currentStroke.color;
@@ -946,11 +981,28 @@
   }
 
   function onPointerUp(e) {
+    if (twoFingerTapInfo) {
+      const elapsed = Date.now() - twoFingerTapInfo.startTime;
+      if (!twoFingerTapInfo.moved && elapsed < 350) {
+        // 두 손가락 탭 감지: 미세 이동/배율 롤백 후 실행 취소(Undo)
+        state.panX = twoFingerTapInfo.startPan.x;
+        state.panY = twoFingerTapInfo.startPan.y;
+        state.scale = twoFingerTapInfo.startScale;
+        updateViewportTransform();
+        triggerUndo();
+      }
+      twoFingerTapInfo = null;
+    }
+
     if (state.pointers.has(e.pointerId)) {
       state.pointers.delete(e.pointerId);
       try {
         dom.viewport.releasePointerCapture(e.pointerId);
       } catch (err) { }
+    }
+
+    if (state.pointers.size === 0) {
+      twoFingerTapInfo = null;
     }
 
     if (state.isDraggingLasso) {
@@ -1005,6 +1057,7 @@
   // ==========================================
   const toolButtons = [
     { btn: dom.toolPen, tool: 'pen' },
+    { btn: dom.toolPencil, tool: 'pencil' },
     { btn: dom.toolHighlighter, tool: 'highlighter' },
     { btn: dom.toolEraser, tool: 'eraser' },
     { btn: dom.toolLasso, tool: 'lasso' }
@@ -1013,7 +1066,7 @@
   function setActiveTool(newTool) {
     state.tool = newTool;
     toolButtons.forEach(({ btn, tool }) => {
-      btn.classList.toggle('active', tool === newTool);
+      if (btn) btn.classList.toggle('active', tool === newTool);
     });
 
     if (newTool !== 'lasso') {
@@ -1025,8 +1078,23 @@
   }
 
   toolButtons.forEach(({ btn, tool }) => {
-    btn.addEventListener('click', () => setActiveTool(tool));
+    if (btn) btn.addEventListener('click', () => setActiveTool(tool));
   });
+
+  // 모눈종이(Grid) 토글 리스너 및 초기화
+  if (dom.gridBtn) {
+    if (state.showGrid) {
+      dom.paperWrapper.classList.add('has-grid');
+      dom.gridBtn.classList.add('active');
+    }
+    dom.gridBtn.addEventListener('click', () => {
+      state.showGrid = !state.showGrid;
+      dom.paperWrapper.classList.toggle('has-grid', state.showGrid);
+      dom.gridBtn.classList.toggle('active', state.showGrid);
+      localStorage.setItem('blanktest_show_grid', String(state.showGrid));
+      showToast(state.showGrid ? '모눈종이 활성화 📐' : '모눈종이 해제', 1200);
+    });
+  }
 
   // 색상 팔레트 클릭
   document.querySelectorAll('.color-dot').forEach(dot => {
@@ -1155,7 +1223,52 @@
   // 캔버스 이미지 로컬 앨범/다운로드 저장 함수 (확인창 없이 즉시 저장)
   async function exportAndSaveCanvasImage() {
     return new Promise((resolve) => {
-      dom.paintCanvas.toBlob(async (blob) => {
+      // 흰색 종이 배경 + 모눈(켜져있을 시) + 필기 스트로크 오프스크린 합성
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = dom.paintCanvas.width;
+      exportCanvas.height = dom.paintCanvas.height;
+      const expCtx = exportCanvas.getContext('2d');
+
+      // 1. 흰색 용지 배경
+      expCtx.fillStyle = '#ffffff';
+      expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+      // 2. 모눈종이 활성화 시 모눈 격자선 합성
+      if (state.showGrid) {
+        expCtx.save();
+        const w = exportCanvas.width;
+        const h = exportCanvas.height;
+
+        // 서브 그리드 (32px)
+        expCtx.strokeStyle = 'rgba(90, 110, 135, 0.08)';
+        expCtx.lineWidth = 1;
+        expCtx.beginPath();
+        for (let x = 0; x <= w; x += 32) {
+          expCtx.moveTo(x, 0); expCtx.lineTo(x, h);
+        }
+        for (let y = 0; y <= h; y += 32) {
+          expCtx.moveTo(0, y); expCtx.lineTo(w, y);
+        }
+        expCtx.stroke();
+
+        // 메인 그리드 (160px)
+        expCtx.strokeStyle = 'rgba(90, 110, 135, 0.18)';
+        expCtx.lineWidth = 1.5;
+        expCtx.beginPath();
+        for (let x = 0; x <= w; x += 160) {
+          expCtx.moveTo(x, 0); expCtx.lineTo(x, h);
+        }
+        for (let y = 0; y <= h; y += 160) {
+          expCtx.moveTo(0, y); expCtx.lineTo(w, y);
+        }
+        expCtx.stroke();
+        expCtx.restore();
+      }
+
+      // 3. 필기 스트로크 얹기
+      expCtx.drawImage(dom.paintCanvas, 0, 0);
+
+      exportCanvas.toBlob(async (blob) => {
         if (!blob) {
           resolve();
           return;

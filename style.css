@@ -599,6 +599,16 @@ html, body {
   touch-action: none;
 }
 
+/* 모눈종이(Grid) 격자 패턴 (A4 용지 실측 격자 노트 질감: 32px 서브그리드 + 160px 메인그리드) */
+.paper-wrapper.has-grid {
+  background-image:
+    linear-gradient(to right, rgba(90, 110, 135, 0.18) 1.5px, transparent 1.5px),
+    linear-gradient(to bottom, rgba(90, 110, 135, 0.18) 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(90, 110, 135, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(90, 110, 135, 0.08) 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
+}
+
 #paint-canvas, #overlay-canvas {
   position: absolute;
   top: 0;
