@@ -609,7 +609,7 @@ html, body {
   background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
 }
 
-#paint-canvas, #overlay-canvas {
+#bg-canvas, #paint-canvas, #overlay-canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -618,8 +618,22 @@ html, body {
   touch-action: none;
 }
 
+#bg-canvas {
+  pointer-events: none;
+  z-index: 1;
+}
+
+#paint-canvas {
+  z-index: 2;
+}
+
 #overlay-canvas {
   pointer-events: none;
+  z-index: 3;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* 줌 배지 (뉴모피즘 플로팅 태그) */

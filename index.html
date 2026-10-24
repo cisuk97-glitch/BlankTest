@@ -11,6 +11,9 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>아이패드 백지테스트</title>
   <!-- Google Fonts: Pretendard & JetBrains Mono (SubjectPlan 뉴모피즘 테마) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,6 +57,7 @@
       </div>
 
       <div class="setup-footer">
+        <button id="btn-force-reload" class="btn-text">🔄 최신 버전 새로고침</button>
         <button id="open-config-btn" class="btn-text">⚙️ Supabase 설정</button>
         <div id="offline-badge-setup" class="badge">온라인</div>
       </div>
@@ -162,6 +166,21 @@
               d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20H4v-4h4v4zm0-6H4v-4h4v4zm0-6H4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4zm6 12h-4v-4h4v4zm0-6h-4v-4h4v4zm0-6h-4V4h4v4z" />
           </svg>
         </button>
+        <!-- 배경 이미지 불러오기 버튼 -->
+        <button id="btn-bg-image" class="tool-btn icon-btn" title="배경 이미지 불러오기">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+          </svg>
+        </button>
+        <!-- 배경 이미지 제거 버튼 -->
+        <button id="btn-bg-clear" class="tool-btn icon-btn hidden" title="배경 이미지 제거">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+        <input type="file" id="bg-image-input" accept="image/*" style="display:none">
         <!-- 시간측정 (화면맞춤 앞으로 이동) -->
         <div class="timer-box" id="timer-box">
           <span class="timer-dot" id="timer-dot"></span>
@@ -193,6 +212,7 @@
     <div id="canvas-container" class="canvas-viewport">
       <div id="canvas-paper-wrapper" class="paper-wrapper">
         <!-- A4 용지 캔버스 (가상 고해상도: 1754 x 2480px, 150DPI A4) -->
+        <canvas id="bg-canvas" width="1754" height="2480"></canvas>
         <canvas id="paint-canvas" width="1754" height="2480"></canvas>
         <canvas id="overlay-canvas" width="1754" height="2480"></canvas>
       </div>

@@ -24,6 +24,7 @@
     color: '#2D3748',
     strokeWidth: 3,
     showGrid: localStorage.getItem('blanktest_show_grid') === 'true',
+    bgImage: null,
 
     // 스트로크 & 히스토리
     strokes: [],       // Array of Stroke objects
@@ -71,10 +72,12 @@
     startBtn: document.getElementById('start-test-btn'),
     openConfigBtn: document.getElementById('open-config-btn'),
     offlineBadge: document.getElementById('offline-badge-setup'),
+    forceReloadBtn: document.getElementById('btn-force-reload'),
 
     // 캔버스 & 래퍼
     viewport: document.getElementById('canvas-container'),
     paperWrapper: document.getElementById('canvas-paper-wrapper'),
+    bgCanvas: document.getElementById('bg-canvas'),
     paintCanvas: document.getElementById('paint-canvas'),
     overlayCanvas: document.getElementById('overlay-canvas'),
     zoomBadge: document.getElementById('zoom-badge'),
@@ -99,6 +102,9 @@
     undoBtn: document.getElementById('btn-undo'),
     redoBtn: document.getElementById('btn-redo'),
     gridBtn: document.getElementById('btn-grid'),
+    btnBgImage: document.getElementById('btn-bg-image'),
+    btnBgClear: document.getElementById('btn-bg-clear'),
+    bgImageInput: document.getElementById('bg-image-input'),
     fitBtn: document.getElementById('btn-fit'),
     restartBtn: document.getElementById('btn-restart'),
     finishBtn: document.getElementById('btn-finish'),
@@ -147,6 +153,7 @@
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
+  const bgCtx = dom.bgCanvas ? dom.bgCanvas.getContext('2d') : null;
   const pCtx = dom.paintCanvas.getContext('2d');
   const oCtx = dom.overlayCanvas.getContext('2d');
 
@@ -1096,6 +1103,89 @@
     });
   }
 
+  // 시작 화면 최신 버전 강제 새로고침 (PWA / 브라우저 캐시 삭제)
+  if (dom.forceReloadBtn) {
+    dom.forceReloadBtn.addEventListener('click', async () => {
+      showToast('최신 버전을 확인하고 새로고침 중...', 3000);
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) {
+            await reg.unregister();
+          }
+        }
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+      } catch (err) {
+        console.warn('캐시 초기화 중 오류:', err);
+      }
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.location.replace(`${cleanUrl}?v=${Date.now()}`);
+    });
+  }
+
+  // 배경 이미지 용지 맞춤 렌더링 함수
+  function drawBackgroundImage(img) {
+    if (!bgCtx || !dom.bgCanvas) return;
+    bgCtx.clearRect(0, 0, dom.bgCanvas.width, dom.bgCanvas.height);
+    if (!img) return;
+
+    const cw = dom.bgCanvas.width;   // 1754
+    const ch = dom.bgCanvas.height;  // 2480
+
+    // 원본 비율을 유지하며 A4 용지 안에 꽉 차게 중앙 정렬(contain fit)
+    const scale = Math.min(cw / img.width, ch / img.height);
+    const dw = img.width * scale;
+    const dh = img.height * scale;
+    const dx = (cw - dw) / 2;
+    const dy = (ch - dh) / 2;
+
+    bgCtx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function clearBackgroundImage() {
+    if (bgCtx && dom.bgCanvas) {
+      bgCtx.clearRect(0, 0, dom.bgCanvas.width, dom.bgCanvas.height);
+    }
+    state.bgImage = null;
+    if (dom.bgImageInput) dom.bgImageInput.value = '';
+    if (dom.btnBgClear) dom.btnBgClear.classList.add('hidden');
+  }
+
+  // 배경 이미지 선택 & 제거 리스너
+  if (dom.btnBgImage && dom.bgImageInput) {
+    dom.btnBgImage.addEventListener('click', () => {
+      dom.bgImageInput.click();
+    });
+
+    dom.bgImageInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          drawBackgroundImage(img);
+          state.bgImage = img;
+          if (dom.btnBgClear) dom.btnBgClear.classList.remove('hidden');
+          showToast('배경 이미지가 용지에 맞게 적용되었습니다. 🖼️', 2500);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (dom.btnBgClear) {
+    dom.btnBgClear.addEventListener('click', () => {
+      clearBackgroundImage();
+      showToast('배경 이미지가 제거되었습니다.', 1800);
+    });
+  }
+
   // 색상 팔레트 클릭
   document.querySelectorAll('.color-dot').forEach(dot => {
     dot.addEventListener('click', (e) => {
@@ -1233,6 +1323,11 @@
       expCtx.fillStyle = '#ffffff';
       expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
+      // 1-1. 배경 이미지가 있으면 용지에 합성
+      if (state.bgImage && dom.bgCanvas) {
+        expCtx.drawImage(dom.bgCanvas, 0, 0);
+      }
+
       // 2. 모눈종이 활성화 시 모눈 격자선 합성
       if (state.showGrid) {
         expCtx.save();
@@ -1332,6 +1427,7 @@
     clearOverlay();
 
     if (fullReset) {
+      clearBackgroundImage();
       stopTimer();
       state.timerSeconds = 0;
       state.timerEverStarted = false;
