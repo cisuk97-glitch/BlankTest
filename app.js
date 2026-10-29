@@ -509,7 +509,7 @@
   // 처음부터 다시 쓰기 (누적 시간은 리셋하지 않고 보존)
   dom.restartBtn.addEventListener('click', () => {
     if (confirm('현재 필기 내용을 지우고 처음부터 다시 시작하시겠습니까?\n(측정 시간은 초기화되지 않고 유지됩니다)')) {
-      pushUndoSnapshot();
+      pushUndoAction({ type: 'clear', prevStrokes: state.strokes.slice() });
       state.strokes = [];
       state.selectedStrokeIds.clear();
       state.lassoBBox = null;
@@ -525,17 +525,73 @@
   // ==========================================
   let currentStroke = null;
 
-  function pushUndoSnapshot() {
-    // 깊은 복사 스냅샷 저장
-    state.undoStack.push(JSON.parse(JSON.stringify(state.strokes)));
-    if (state.undoStack.length > 30) state.undoStack.shift();
+  // 캔버스 드로잉 스타일을 스트로크 시작 시 1회만 설정 (save/restore 오버헤드 제거)
+  function setupPaintContextStyle(stroke) {
+    pCtx.lineCap = 'round';
+    pCtx.lineJoin = 'round';
+    if (stroke.type === 'highlighter') {
+      pCtx.globalAlpha = 0.35;
+      pCtx.strokeStyle = stroke.color;
+      pCtx.lineWidth = stroke.width * 3.5;
+    } else if (stroke.type === 'pencil') {
+      pCtx.globalAlpha = 0.65;
+      pCtx.strokeStyle = stroke.color;
+      pCtx.lineWidth = Math.max(1, stroke.width * 0.9);
+    } else {
+      pCtx.globalAlpha = 1.0;
+      pCtx.strokeStyle = stroke.color;
+      pCtx.lineWidth = stroke.width;
+    }
+  }
+
+  // 스트로크 좌표 오프셋 이동 (올가미 이동용)
+  function applyStrokeMove(ids, dx, dy) {
+    const idSet = ids instanceof Set ? ids : new Set(ids);
+    for (const stroke of state.strokes) {
+      if (idSet.has(stroke.id)) {
+        for (const p of stroke.points) {
+          p.x += dx;
+          p.y += dy;
+        }
+        stroke.bbox.minX += dx;
+        stroke.bbox.maxX += dx;
+        stroke.bbox.minY += dy;
+        stroke.bbox.maxY += dy;
+      }
+    }
+  }
+
+  // 액션 기반 초경량 Undo / Redo 스택 (객체 통복사 제거로 0ms 초고속 동작)
+  function pushUndoAction(action) {
+    state.undoStack.push(action);
+    if (state.undoStack.length > 50) state.undoStack.shift();
     state.redoStack = []; // 새 작업 시 redo 초기화
+  }
+
+  function pushUndoSnapshot() {
+    // 하위 호환용 스냅샷 래퍼
+    pushUndoAction({ type: 'replace', prevStrokes: state.strokes.slice(), nextStrokes: state.strokes.slice() });
   }
 
   function triggerUndo() {
     if (state.undoStack.length === 0) return;
-    state.redoStack.push(JSON.parse(JSON.stringify(state.strokes)));
-    state.strokes = state.undoStack.pop();
+    const action = state.undoStack.pop();
+
+    if (action.type === 'add') {
+      const idx = state.strokes.indexOf(action.stroke);
+      if (idx !== -1) state.strokes.splice(idx, 1);
+      state.redoStack.push(action);
+    } else if (action.type === 'erase' || action.type === 'delete' || action.type === 'clear') {
+      state.redoStack.push(action);
+      state.strokes = action.prevStrokes.slice();
+    } else if (action.type === 'move') {
+      applyStrokeMove(action.ids, -action.dx, -action.dy);
+      state.redoStack.push(action);
+    } else if (action.type === 'replace') {
+      state.redoStack.push(action);
+      state.strokes = action.prevStrokes.slice();
+    }
+
     state.selectedStrokeIds.clear();
     state.lassoBBox = null;
     hideLassoActionBar();
@@ -547,17 +603,36 @@
 
   dom.undoBtn.addEventListener('click', triggerUndo);
 
-  dom.redoBtn.addEventListener('click', () => {
+  function triggerRedo() {
     if (state.redoStack.length === 0) return;
-    state.undoStack.push(JSON.parse(JSON.stringify(state.strokes)));
-    state.strokes = state.redoStack.pop();
+    const action = state.redoStack.pop();
+
+    if (action.type === 'add') {
+      state.strokes.push(action.stroke);
+      state.undoStack.push(action);
+    } else if (action.type === 'erase' || action.type === 'delete') {
+      state.undoStack.push(action);
+      state.strokes = action.nextStrokes.slice();
+    } else if (action.type === 'clear') {
+      state.undoStack.push(action);
+      state.strokes = [];
+    } else if (action.type === 'move') {
+      applyStrokeMove(action.ids, action.dx, action.dy);
+      state.undoStack.push(action);
+    } else if (action.type === 'replace') {
+      state.undoStack.push(action);
+      state.strokes = action.nextStrokes.slice();
+    }
+
     state.selectedStrokeIds.clear();
     state.lassoBBox = null;
     hideLassoActionBar();
     redrawAll();
     clearOverlay();
     registerUserActivity();
-  });
+  }
+
+  dom.redoBtn.addEventListener('click', triggerRedo);
 
   function computeBBox(points) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -753,8 +828,10 @@
   // 올가미 선택 스트로크 삭제
   dom.lassoDeleteBtn.addEventListener('click', () => {
     if (state.selectedStrokeIds.size === 0) return;
-    pushUndoSnapshot();
-    state.strokes = state.strokes.filter(s => !state.selectedStrokeIds.has(s.id));
+    const prev = state.strokes.slice();
+    const next = state.strokes.filter(s => !state.selectedStrokeIds.has(s.id));
+    pushUndoAction({ type: 'delete', prevStrokes: prev, nextStrokes: next });
+    state.strokes = next;
     state.selectedStrokeIds.clear();
     state.lassoBBox = null;
     hideLassoActionBar();
@@ -784,8 +861,24 @@
   function onPointerDown(e) {
     e.preventDefault();
     dom.viewport.setPointerCapture(e.pointerId);
-    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
+    const isPen = (e.pointerType === 'pen');
+
+    // 1. 펜 입력 최우선 처리: 2손가락 제스처 판정 및 팜터치 무시하고 즉시 필기 직행
+    if (isPen) {
+      registerUserActivity();
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, isPen: true });
+      startSinglePointerAction(e, true);
+      return;
+    }
+
+    // 2. 손가락 터치(touch)인 경우:
+    // 만약 펜으로 필기 중이라면, 손바닥 터치는 무시 (Palm Rejection)
+    if (currentStroke && currentStroke.isPen) {
+      return;
+    }
+
+    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, isPen: false });
     registerUserActivity();
 
     // 두 손가락 이상: 줌 & 팬 모드 진입 및 2손가락 탭 감지 시작
@@ -816,50 +909,66 @@
       return;
     }
 
-    // 1개 포인터: 필기/올가미/지우개
+    // 1개 포인터 (손가락 터치 필기/올가미/지우개)
     if (state.pointers.size === 1) {
-      const pt = clientToCanvas(e.clientX, e.clientY);
+      startSinglePointerAction(e, false);
+    }
+  }
 
-      // 올가미 선택 영역 내부 드래그인지 확인
-      if (state.tool === 'lasso' && state.lassoBBox) {
-        const b = state.lassoBBox;
-        if (pt.x >= b.minX && pt.x <= b.maxX && pt.y >= b.minY && pt.y <= b.maxY) {
-          state.isDraggingLasso = true;
-          state.dragStartPt = pt;
-          pushUndoSnapshot();
-          return;
-        } else {
-          // 외부 탭 시 기존 선택 해제 후 새로 그리기
-          state.selectedStrokeIds.clear();
-          state.lassoBBox = null;
-          hideLassoActionBar();
-          clearOverlay();
-        }
-      }
+  function startSinglePointerAction(e, isPen) {
+    const pt = clientToCanvas(e.clientX, e.clientY);
 
-      if (state.tool === 'pen' || state.tool === 'pencil' || state.tool === 'highlighter') {
-        currentStroke = {
-          id: 's_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-          type: state.tool,
-          color: state.color,
-          width: Number(state.strokeWidth),
-          points: [pt],
-          bbox: { minX: pt.x, minY: pt.y, maxX: pt.x, maxY: pt.y }
-        };
-        drawSingleStroke(pCtx, currentStroke);
-      } else if (state.tool === 'eraser') {
-        eraseAtPoint(pt);
-      } else if (state.tool === 'lasso') {
-        state.lassoPoints = [pt];
+    // 올가미 선택 영역 내부 드래그인지 확인
+    if (state.tool === 'lasso' && state.lassoBBox) {
+      const b = state.lassoBBox;
+      if (pt.x >= b.minX && pt.x <= b.maxX && pt.y >= b.minY && pt.y <= b.maxY) {
+        state.isDraggingLasso = true;
+        state.dragStartPt = pt;
+        state.lassoTotalDelta = { dx: 0, dy: 0 };
+        return;
+      } else {
+        // 외부 탭 시 기존 선택 해제 후 새로 그리기
+        state.selectedStrokeIds.clear();
+        state.lassoBBox = null;
+        hideLassoActionBar();
         clearOverlay();
       }
+    }
+
+    if (state.tool === 'pen' || state.tool === 'pencil' || state.tool === 'highlighter') {
+      currentStroke = {
+        id: 's_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        type: state.tool,
+        color: state.color,
+        width: Number(state.strokeWidth),
+        points: [pt],
+        bbox: { minX: pt.x, minY: pt.y, maxX: pt.x, maxY: pt.y },
+        isPen: isPen
+      };
+      setupPaintContextStyle(currentStroke);
+      drawSingleStroke(pCtx, currentStroke);
+    } else if (state.tool === 'eraser') {
+      eraseAtPoint(pt);
+    } else if (state.tool === 'lasso') {
+      state.lassoPoints = [pt];
+      clearOverlay();
     }
   }
 
   function onPointerMove(e) {
     if (!state.pointers.has(e.pointerId)) return;
     e.preventDefault();
-    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, isPen: (e.pointerType === 'pen') });
+
+    const isPen = (e.pointerType === 'pen');
+
+    // 펜 입력이거나 펜 필기 중인 경우: 핀치 줌 로직 완전 스킵하고 100% 드로잉 직행
+    if (isPen || (currentStroke && currentStroke.isPen)) {
+      if (isPen) {
+        handleSinglePointerMove(e);
+      }
+      return;
+    }
 
     // 멀티터치 제스처 (2손가락 핀치 줌 & 팬)
     if (state.pointers.size === 2) {
@@ -903,87 +1012,77 @@
 
     // 단일 포인터 동작
     if (state.pointers.size === 1) {
-      const pt = clientToCanvas(e.clientX, e.clientY);
+      handleSinglePointerMove(e);
+    }
+  }
+
+  function handleSinglePointerMove(e) {
+    // 2초마다 사용자 활동 등록 스로틀링 (매 move 호출 부담 제거)
+    if (Date.now() - state.lastActivityTime > 2000) {
       registerUserActivity();
+    }
 
-      // 올가미 드래그 이동
-      if (state.isDraggingLasso && state.dragStartPt) {
-        const dx = pt.x - state.dragStartPt.x;
-        const dy = pt.y - state.dragStartPt.y;
-        state.dragStartPt = pt;
+    const pt = clientToCanvas(e.clientX, e.clientY);
 
-        // 선택된 모든 스트로크 좌표 이동
-        for (const stroke of state.strokes) {
-          if (state.selectedStrokeIds.has(stroke.id)) {
-            for (const p of stroke.points) {
-              p.x += dx;
-              p.y += dy;
-            }
-            stroke.bbox.minX += dx;
-            stroke.bbox.maxX += dx;
-            stroke.bbox.minY += dy;
-            stroke.bbox.maxY += dy;
-          }
-        }
-        computeSelectedBBox();
-        redrawAll();
-        renderSelectionOverlay();
-        return;
-      }
+    // 올가미 드래그 이동
+    if (state.isDraggingLasso && state.dragStartPt) {
+      const dx = pt.x - state.dragStartPt.x;
+      const dy = pt.y - state.dragStartPt.y;
+      state.dragStartPt = pt;
+      if (!state.lassoTotalDelta) state.lassoTotalDelta = { dx: 0, dy: 0 };
+      state.lassoTotalDelta.dx += dx;
+      state.lassoTotalDelta.dy += dy;
 
-      // 펜 / 연필 / 형광펜 그리기
-      if (currentStroke) {
-        currentStroke.points.push(pt);
-        // bbox 갱신
-        if (pt.x < currentStroke.bbox.minX) currentStroke.bbox.minX = pt.x;
-        if (pt.y < currentStroke.bbox.minY) currentStroke.bbox.minY = pt.y;
-        if (pt.x > currentStroke.bbox.maxX) currentStroke.bbox.maxX = pt.x;
-        if (pt.y > currentStroke.bbox.maxY) currentStroke.bbox.maxY = pt.y;
+      applyStrokeMove(state.selectedStrokeIds, dx, dy);
+      computeSelectedBBox();
+      redrawAll();
+      renderSelectionOverlay();
+      return;
+    }
 
-        // 마지막 선분 즉시 렌더링
+    // 펜 / 연필 / 형광펜 그리기 (Apple Pencil 120Hz/240Hz 핫패스 최적화)
+    if (currentStroke) {
+      const rawEvents = (e.getCoalescedEvents && e.getCoalescedEvents().length > 0)
+        ? e.getCoalescedEvents()
+        : [e];
+
+      for (let i = 0; i < rawEvents.length; i++) {
+        const ev = rawEvents[i];
+        const movePt = clientToCanvas(ev.clientX, ev.clientY);
         const pts = currentStroke.points;
-        const len = pts.length;
-        if (len >= 2) {
-          pCtx.save();
-          pCtx.lineCap = 'round';
-          pCtx.lineJoin = 'round';
-          if (currentStroke.type === 'highlighter') {
-            pCtx.globalAlpha = 0.35;
-            pCtx.strokeStyle = currentStroke.color;
-            pCtx.lineWidth = currentStroke.width * 3.5;
-          } else if (currentStroke.type === 'pencil') {
-            pCtx.globalAlpha = 0.65;
-            pCtx.strokeStyle = currentStroke.color;
-            pCtx.lineWidth = Math.max(1, currentStroke.width * 0.9);
-          } else {
-            pCtx.globalAlpha = 1.0;
-            pCtx.strokeStyle = currentStroke.color;
-            pCtx.lineWidth = currentStroke.width;
-          }
-          pCtx.beginPath();
-          pCtx.moveTo(pts[len - 2].x, pts[len - 2].y);
-          pCtx.lineTo(pts[len - 1].x, pts[len - 1].y);
-          pCtx.stroke();
-          pCtx.restore();
-        }
-      } else if (state.tool === 'eraser') {
-        eraseAtPoint(pt);
-      } else if (state.tool === 'lasso' && state.lassoPoints.length > 0) {
-        state.lassoPoints.push(pt);
-        // 오버레이에 올가미 가이드라인 표시
-        clearOverlay();
-        oCtx.save();
-        oCtx.strokeStyle = '#3b82f6';
-        oCtx.lineWidth = 2;
-        oCtx.setLineDash([6, 6]);
-        oCtx.beginPath();
-        oCtx.moveTo(state.lassoPoints[0].x, state.lassoPoints[0].y);
-        for (let i = 1; i < state.lassoPoints.length; i++) {
-          oCtx.lineTo(state.lassoPoints[i].x, state.lassoPoints[i].y);
-        }
-        oCtx.stroke();
-        oCtx.restore();
+        const prevPt = pts[pts.length - 1];
+
+        if (prevPt && prevPt.x === movePt.x && prevPt.y === movePt.y) continue;
+
+        pts.push(movePt);
+
+        if (movePt.x < currentStroke.bbox.minX) currentStroke.bbox.minX = movePt.x;
+        if (movePt.y < currentStroke.bbox.minY) currentStroke.bbox.minY = movePt.y;
+        if (movePt.x > currentStroke.bbox.maxX) currentStroke.bbox.maxX = movePt.x;
+        if (movePt.y > currentStroke.bbox.maxY) currentStroke.bbox.maxY = movePt.y;
+
+        // save/restore 없이 경량화된 즉각 선분 렌더링
+        pCtx.beginPath();
+        pCtx.moveTo(prevPt.x, prevPt.y);
+        pCtx.lineTo(movePt.x, movePt.y);
+        pCtx.stroke();
       }
+    } else if (state.tool === 'eraser') {
+      eraseAtPoint(pt);
+    } else if (state.tool === 'lasso' && state.lassoPoints.length > 0) {
+      state.lassoPoints.push(pt);
+      clearOverlay();
+      oCtx.save();
+      oCtx.strokeStyle = '#3b82f6';
+      oCtx.lineWidth = 2;
+      oCtx.setLineDash([6, 6]);
+      oCtx.beginPath();
+      oCtx.moveTo(state.lassoPoints[0].x, state.lassoPoints[0].y);
+      for (let i = 1; i < state.lassoPoints.length; i++) {
+        oCtx.lineTo(state.lassoPoints[i].x, state.lassoPoints[i].y);
+      }
+      oCtx.stroke();
+      oCtx.restore();
     }
   }
 
@@ -991,7 +1090,6 @@
     if (twoFingerTapInfo) {
       const elapsed = Date.now() - twoFingerTapInfo.startTime;
       if (!twoFingerTapInfo.moved && elapsed < 350) {
-        // 두 손가락 탭 감지: 미세 이동/배율 롤백 후 실행 취소(Undo)
         state.panX = twoFingerTapInfo.startPan.x;
         state.panY = twoFingerTapInfo.startPan.y;
         state.scale = twoFingerTapInfo.startScale;
@@ -1015,14 +1113,22 @@
     if (state.isDraggingLasso) {
       state.isDraggingLasso = false;
       state.dragStartPt = null;
+      if (state.lassoTotalDelta && (state.lassoTotalDelta.dx !== 0 || state.lassoTotalDelta.dy !== 0)) {
+        pushUndoAction({
+          type: 'move',
+          ids: Array.from(state.selectedStrokeIds),
+          dx: state.lassoTotalDelta.dx,
+          dy: state.lassoTotalDelta.dy
+        });
+      }
       return;
     }
 
     if (currentStroke) {
-      pushUndoSnapshot();
+      pushUndoAction({ type: 'add', stroke: currentStroke });
       state.strokes.push(currentStroke);
       currentStroke = null;
-      redrawAll();
+      // 최적화: pointerup 시 캔버스 전량 재렌더링(redrawAll)을 제거하여 획 종료 딜레이 완전 박멸
     }
 
     if (state.tool === 'lasso' && state.lassoPoints.length > 2) {
@@ -1053,8 +1159,13 @@
     }
 
     if (erasedAny) {
-      pushUndoSnapshot();
+      const prev = state.strokes.slice();
       state.strokes = remaining;
+      pushUndoAction({
+        type: 'erase',
+        prevStrokes: prev,
+        nextStrokes: remaining
+      });
       redrawAll();
     }
   }
